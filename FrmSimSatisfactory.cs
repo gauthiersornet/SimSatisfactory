@@ -367,6 +367,21 @@ namespace SimSatisfactory
             SelectedPcs_LEFT = Pièce.EPièce.vide;
             this.Refresh();
         }
+		
+		private static readonly (string Nom, Recette[] Recettes)[] _producteurs_recettes =
+		{
+			("Extracteurs", Recette.Extracteurs),
+			("Centrales", Recette.Centrales),
+			("Fonderies", Recette.Fonderies),
+			("Fonderies_avancées", Recette.Fonderies_avancées),
+			("Constructeurs", Recette.Constructeurs),
+			("Assembleuses", Recette.Assembleuses),
+			("Façonneuses", Recette.Façonneuses),
+			("Rafineries", Recette.Rafineries),
+			("Packageurs", Recette.Packageurs),
+			("Mélangeurs", Recette.Mélangeurs),
+			("Accélérateur", Recette.Accélérateur_de_particules)
+		};
 
         private void FrmSimSatisfactory_MouseClick(object sender, MouseEventArgs e)
         {
@@ -376,70 +391,234 @@ namespace SimSatisfactory
                 float dCarrée = dX.X * dX.X + dX.Y * dX.Y;
                 if (dCarrée < CLICK_SEUIL)
                 {
-                    ContextMenu ctxm = new ContextMenu();
+                    ContextMenuStrip ctxm = new ContextMenuStrip();
 
                     PointF pt = ProjectionInvWin(e.Location);
                     if (usine != null)
                     {
-                        ctxm.MenuItems.Add(new MenuItem("Consomation", new MenuItem[]
-                        {
-                            new MenuItem($"ConsommationRéel : {-Math.Round(usine.ConsommationRéel, 3)}Mw"),
-                            new MenuItem($"ConsommationMax : {-Math.Round(usine.ConsommationMax, 3)}Mw")
-                        }));
-                        ctxm.MenuItems.Add("Simulation", new MenuItem[]{
-                            new MenuItem("Calculer", (o, eArg) => { if (usine != null) { usine.Calculer(); this.Refresh(); } }),
-                            new MenuItem("Optimiser", (o, eArg) => { if (usine != null) { usine.Optimiser(); this.Refresh(); } }),
-                            new MenuItem("Optimiser les flux 1 step", (o, eArg) => { if (usine != null) { usine.OptimiserFlux(1, 1.0); this.Refresh(); } }),
-                            new MenuItem("Optimiser les flux 10 step", (o, eArg) => { if (usine != null) { usine.OptimiserFlux(10, 0.8); this.Refresh(); } }),
-                            new MenuItem("Optimiser les flux 100 step", (o, eArg) => { if (usine != null) { usine.OptimiserFlux(100, 0.6); this.Refresh(); } }),
-                            new MenuItem("Optimiser les flux 2000 step", (o, eArg) => { if (usine != null) { usine.OptimiserFlux(1000, 0.5); this.Refresh(); } })
-                        });
+						// Ajoutez un élément de menu "Consommation"
+						ctxm.Items.Add($"ConsommationRéel : {-Math.Round(usine.ConsommationRéel, 3)}Mw");
+						ctxm.Items.Add($"ConsommationMax : {-Math.Round(usine.ConsommationMax, 3)}Mw");
+						
+						
+
+						// Créer un sous-menu pour les options de simulation
+						var subMenuSimulation = new ToolStripMenuItem("Simulation");
+
+						// Ajouter les éléments de menu pour les options de simulation
+						var menuItemCalculer = new ToolStripMenuItem("Calculer");
+						menuItemCalculer.Click += (sender, e) =>
+						{
+							if (usine != null)
+							{
+								usine.Calculer();
+								this.Refresh();
+							}
+						};
+						subMenuSimulation.DropDownItems.Add(menuItemCalculer);
+
+						var menuItemOptimiser = new ToolStripMenuItem("Optimiser");
+						menuItemOptimiser.Click += (sender, e) =>
+						{
+							if (usine != null)
+							{
+								usine.Optimiser();
+								this.Refresh();
+							}
+						};
+						subMenuSimulation.DropDownItems.Add(menuItemOptimiser);
+
+						var menuItemOptimiserFlux = new ToolStripMenuItem("Optimiser les flux 1 step");
+						menuItemOptimiserFlux.Click += (sender, e) =>
+						{
+							if (usine != null)
+							{
+								usine.OptimiserFlux(1, 1.0);
+								this.Refresh();
+							}
+						};
+						subMenuSimulation.DropDownItems.Add(menuItemOptimiserFlux);
+
+						var menuItemOptimiserFlux10 = new ToolStripMenuItem("Optimiser les flux 10 step");
+						menuItemOptimiserFlux10.Click += (sender, e) =>
+						{
+							if (usine != null)
+							{
+								usine.OptimiserFlux(10, 0.8);
+								this.Refresh();
+							}
+						};
+						subMenuSimulation.DropDownItems.Add(menuItemOptimiserFlux10);
+
+						var menuItemOptimiserFlux100 = new ToolStripMenuItem("Optimiser les flux 100 step");
+						menuItemOptimiserFlux100.Click += (sender, e) =>
+						{
+							if (usine != null)
+							{
+								usine.OptimiserFlux(100, 0.6);
+								this.Refresh();
+							}
+						};
+						subMenuSimulation.DropDownItems.Add(menuItemOptimiserFlux100);
+
+						var menuItemOptimiserFlux1000 = new ToolStripMenuItem("Optimiser les flux 1000 step");
+						menuItemOptimiserFlux1000.Click += (sender, e) =>
+						{
+							if (usine != null)
+							{
+								usine.OptimiserFlux(1000, 0.5);
+								this.Refresh();
+							}
+						};
+						subMenuSimulation.DropDownItems.Add(menuItemOptimiserFlux1000);
+						
+						// Ajouter l'élément de menu subMenuSimulation
+						ctxm.Items.Add(subMenuSimulation);
+						
                         Lien ln = usine.SelectionLien(pt);
                         if (ln != null)
                         {
-                            ctxm.MenuItems.Add(new MenuItem("Configurer (DBCLICK)", (o, eArg) => { if (new FrmConfig(ln).ShowDialog(this) == DialogResult.Yes) { if(ln.ProducteurSource != null) ln.ProducteurSource.Recalculer(); this.Refresh(); } }));
-                            ctxm.MenuItems.Add("-");
-                            ctxm.MenuItems.Add(new MenuItem("Supprimer (SUPPR)", (o, eArg) => { Producteur.SupprimerLien(ln); usine.Calculer(); NétoyerMain(); }));
+							var menuItemConfigurerLien = new ToolStripMenuItem("Configurer (DBCLICK)");
+							menuItemConfigurerLien.Click += (sender, e) =>
+							{
+								if (new FrmConfig(ln).ShowDialog(this) == DialogResult.Yes)
+								{
+									if(ln.ProducteurSource != null)
+									{
+										ln.ProducteurSource.Recalculer();
+										this.Refresh();
+									}
+								}
+							};
+							ctxm.Items.Add(menuItemConfigurerLien);
+							ctxm.Items.Add("-");
+							var menuItemSupprimerLien = new ToolStripMenuItem("Supprimer (SUPPR)");
+							menuItemSupprimerLien.Click += (sender, e) =>
+							{
+								Producteur.SupprimerLien(ln);
+								usine.Calculer();
+								NétoyerMain();
+							};
+							ctxm.Items.Add(menuItemSupprimerLien);
                         }
                         else
                         {
                             Producteur prod = usine.SelectionSeule(pt);
                             if(prod != null)
                             {
-                                ctxm.MenuItems.Add(new MenuItem("Configurer (DBCLICK)", (o, eArg) => { if (new FrmConfig(prod).ShowDialog(this) == DialogResult.Yes) { prod.Recalculer(); this.Refresh(); } }));
-                                ctxm.MenuItems.Add("-");
-                                ctxm.MenuItems.Add(new MenuItem("Supprimer (SUPPR)", (o, eArg) => { usine.SupprimerProducteur(prod); usine.Calculer(); NétoyerMain(); }));
-                                ctxm.MenuItems.Add(new MenuItem("Supprimer avec source (RETOUR)", (o, eArg) => { usine.SupprimerProducteurAvecSource(prod); usine.Calculer(); NétoyerMain(); }));
+								var menuItemConfigurerProd = new ToolStripMenuItem("Configurer (DBCLICK)");
+								menuItemConfigurerProd.Click += (sender, e) =>
+								{
+									if (new FrmConfig(prod).ShowDialog(this) == DialogResult.Yes)
+									{
+										prod.Recalculer();
+										this.Refresh();
+										
+									}
+								};
+								ctxm.Items.Add(menuItemConfigurerProd);
+								
+								ctxm.Items.Add("-");
+								
+								var menuItemSupprimerProd = new ToolStripMenuItem("Supprimer (SUPPR)");
+								menuItemSupprimerProd.Click += (sender, e) =>
+								{
+									usine.SupprimerProducteur(prod);
+									usine.Calculer();
+									NétoyerMain();
+								};
+								ctxm.Items.Add(menuItemSupprimerProd);
+								
+								var menuItemSupprimerProdAvSrc = new ToolStripMenuItem("Supprimer avec source (RETOUR)");
+								menuItemSupprimerProdAvSrc.Click += (sender, e) =>
+								{
+									usine.SupprimerProducteurAvecSource(prod);
+									usine.Calculer();
+									NétoyerMain();
+								};
+								ctxm.Items.Add(menuItemSupprimerProdAvSrc);
                             }
                         }
                     }
                     //if(ctxm.MenuItems.Count == 0)
                     {
-                        ctxm.MenuItems.Add("-");
-                        ctxm.MenuItems.Add(new MenuItem("Créer usine", (o, eArg) => { FrmCréer cr = new FrmCréer("usine", Enum.GetNames(typeof(Pièce.EPièce)).Skip(7).ToArray()); CréationUsine(cr, pt); }));
-                        ctxm.MenuItems.Add(new MenuItem("Créer conteneur", (o, eArg) => { FrmCréer cr = new FrmCréer("conteneur", Enum.GetNames(typeof(Pièce.EPièce)).Skip(1).ToArray()); CréerConteneur(cr, pt); }));
-                        ctxm.MenuItems.Add(new MenuItem("Créer producteur", new MenuItem[]
-                        {
-                                new MenuItem("Extracteurs", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("extracteur", Recette.Extracteurs.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Centrales", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("centrale", Recette.Centrales.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Fonderies", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("fonderie", Recette.Fonderies.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Fonderies_avancées", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("fonderie avancée", Recette.Fonderies_avancées.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Constructeurs", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("constructeur", Recette.Constructeurs.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Assembleuses", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("assembleuse", Recette.Assembleuses.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Façonneuses", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("façonneuse", Recette.Façonneuses.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Rafineries", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("rafinerie", Recette.Rafineries.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Packageurs", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("packageur", Recette.Packageurs.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Mélangeurs", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("mélangeur", Recette.Mélangeurs.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); })),
-                                new MenuItem("Accélérateur", new EventHandler((o,ev) => { FrmCréer cr = new FrmCréer("accélérateur de particules", Recette.Accélérateur_de_particules.Select(r => r.ToString()).ToArray()); CréerProducteur(cr, pt); }))
-                        }));
+                        ctxm.Items.Add("-");
+						
+						// Créer un élément de menu "Créer usine"
+						var menuItemCreerUsine = new ToolStripMenuItem("Créer usine");
+						menuItemCreerUsine.Click += (sender, e) =>
+						{
+							// Créer une nouvelle instance de FrmCréer
+							var cr = new FrmCréer("usine", Enum.GetNames(typeof(Pièce.EPièce)).Skip(7).ToArray());
+
+							// Appeler la méthode CréationUsine
+							CréationUsine(cr, pt);
+						};
+
+						// Ajouter l'élément de menu "Créer usine" au ContextMenuStrip
+						ctxm.Items.Add(menuItemCreerUsine);
+
+						// Créer un élément de menu "Créer conteneur"
+						var menuItemCreerConteneur = new ToolStripMenuItem("Créer conteneur");
+						menuItemCreerConteneur.Click += (sender, e) =>
+						{
+							// Créer une nouvelle instance de FrmCréer
+							var cr = new FrmCréer("conteneur", Enum.GetNames(typeof(Pièce.EPièce)).Skip(1).ToArray());
+
+							// Appeler la méthode CréerConteneur
+							CréerConteneur(cr, pt);
+						};
+
+						// Ajouter l'élément de menu "Créer conteneur" au ContextMenuStrip
+						ctxm.Items.Add(menuItemCreerConteneur);
+						
+						// Créer un élément de menu "Créer producteur"
+						//var menuItemCreerProducteur = new ToolStripMenuItem("Créer producteur");
+
+						// Créer un sous-menu pour les types de producteurs
+						var subMenuProducteur = new ToolStripMenuItem("Créer producteur");
+						//menuItemCreerProducteur.DropDownItems.Add(subMenuProducteur);
+
+						// Ajouter des éléments de menu pour chaque type de producteur
+						foreach (var typeProducteur in _producteurs_recettes)
+						{
+							var menuItem = new ToolStripMenuItem(typeProducteur.Nom);
+							menuItem.Click += (sender, e) =>
+							{
+								// Créer une nouvelle instance de FrmCréer
+								var cr = new FrmCréer(typeProducteur.Nom, typeProducteur.Recettes.Select(r => r.ToString()).ToArray());
+
+								// Appeler la méthode CréerProducteur
+								CréerProducteur(cr, pt);
+							};
+
+							subMenuProducteur.DropDownItems.Add(menuItem);
+						}
+
+						// Ajouter l'élément de menu "Créer producteur" au ContextMenuStrip
+						ctxm.Items.Add(subMenuProducteur);
                     }
-                    ctxm.MenuItems.Add("-");
-                    ctxm.MenuItems.Add(new MenuItem("Photographier", (o, eArg) => { if (usine != null) usine.Photographier(); }));
-                    ctxm.MenuItems.Add(new MenuItem("Sauvegarder", (o, eArg) => { if(usine != null) usine.Sauvegarder(); }));
-                    ctxm.MenuItems.Add("-");
-                    ctxm.MenuItems.Add(new MenuItem("Tout Supprimer", (o, eArg) => { usine = null; NétoyerMain(); }));
-
-
+					
+					ctxm.Items.Add("-");
+					var menuItemPhotographier = new ToolStripMenuItem("Photographier");
+					menuItemPhotographier.Click += (sender, e) =>
+					{
+						if (usine != null) usine.Photographier();
+					};
+					ctxm.Items.Add(menuItemPhotographier);
+					var menuItemSauvegarder = new ToolStripMenuItem("Sauvegarder");
+					menuItemSauvegarder.Click += (sender, e) =>
+					{
+						if(usine != null) usine.Sauvegarder();
+					};
+					ctxm.Items.Add(menuItemSauvegarder);
+					ctxm.Items.Add("-");
+					var menuItemToutSupprimer = new ToolStripMenuItem("Tout Supprimer");
+					menuItemToutSupprimer.Click += (sender, e) =>
+					{
+						usine = null; NétoyerMain();
+					};
+					ctxm.Items.Add(menuItemToutSupprimer);
                     ctxm.Show(this, e.Location);
                 }
             }
